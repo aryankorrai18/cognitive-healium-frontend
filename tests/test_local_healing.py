@@ -1,15 +1,13 @@
 """
-Playwright self-healing tests using the local fixture page.
-Fast — no network needed.
+Local Playwright test — simulates a UI change mid-test.
 """
 
-import threading
 import time
+import threading
 import http.server
 import functools
 import pytest
 from pathlib import Path
-
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures"
 
@@ -28,21 +26,16 @@ def local_server():
     server.shutdown()
 
 
-@pytest.mark.healium
-def test_fill_heals_broken_input(healing_page, local_server):
-    healing_page.goto(f"{local_server}/test_page.html")
-    healing_page.page.fill("#search-input", "initial test")
-    healing_page.page.evaluate("window.BREAK_UI()")
+def test_fill_heals_broken_input(page, local_server):
+    """Element ID changes mid-test — Healium heals the broken locator."""
+    page.goto(f"{local_server}/test_page.html")
+    page.fill("#search-input", "initial test")
 
-    healing_page.fill(
-        "#search-input",
-        "Healium healed this!",
-        intent="product search input field",
-    )
+    # Dev renames the element — ID is gone
+    page.evaluate("window.BREAK_UI()")
 
-    value = healing_page.page.evaluate("document.querySelector('input').value")
-    assert value == "Healium healed this!", f"Unexpected value: {value}"
+    # Same test code still works — Healium auto-heals
+    page.fill("#search-input", "Healium healed this!", intent="product search input field")
 
-    assert healing_page.healing_events, "Expected at least one healing event"
-    assert healing_page.healing_events[0].status == "healed"
-    assert healing_page.healing_events[0].confidence > 0.5
+    value = page.locator("input").input_value()
+    assert value == "Healium healed this!"

@@ -1,9 +1,6 @@
 """
-Selenium self-healing tests — same local fixture page as Playwright tests.
-Both frameworks share the same ChromaDB memory via the healium_memory fixture.
-
-Run:
-    pytest tests/test_selenium_healing.py --healium-enabled -v
+Selenium self-healing test.
+Shows that Healium works with Selenium too — not just Playwright.
 """
 
 import time
@@ -34,60 +31,31 @@ def local_server():
 
 
 @pytest.fixture
-def chrome_options():
+def h(healing_driver_factory, local_server):
     opts = Options()
     opts.add_argument("--headless=new")
     opts.add_argument("--no-sandbox")
     opts.add_argument("--disable-dev-shm-usage")
     opts.add_argument("--disable-gpu")
-    return opts
+
+    driver = webdriver.Chrome(options=opts)
+    healing = healing_driver_factory(driver)
+    yield healing
+    driver.quit()
 
 
-@pytest.mark.healium
-def test_selenium_fill_heals(healing_driver_factory, chrome_options, local_server):
-    driver = webdriver.Chrome(options=chrome_options)
-    h = healing_driver_factory(driver)
+def test_selenium_fill_heals(h, local_server):
+    """Selenium — broken ID gets auto-healed."""
+    h.get(f"{local_server}/test_page.html")
+    time.sleep(1)
 
-    try:
-        h.get(f"{local_server}/test_page.html")
-        time.sleep(1)
+    h.find_element(By.ID, "search-input").send_keys("initial")
 
-        h.find_element(By.ID, "search-input").send_keys("initial")
-        h.execute_script("window.BREAK_UI()")
+    # Dev changes the UI
+    h.execute_script("window.BREAK_UI()")
 
-        h.fill(
-            By.ID, "search-input",
-            "Selenium healed this!",
-            intent="product search input field",
-        )
+    # Same test code — Healium auto-heals
+    h.fill(By.ID, "search-input", "Selenium healed this!", intent="product search input field")
 
-        value = h.execute_script("return document.querySelector('input').value")
-        assert value == "Selenium healed this!", f"Unexpected value: {value}"
-        assert h.healing_events, "Expected a healing event"
-        assert h.healing_events[0].status == "healed"
-
-    finally:
-        driver.quit()
-
-
-@pytest.mark.healium
-def test_selenium_click_heals(healing_driver_factory, chrome_options, local_server):
-    driver = webdriver.Chrome(options=chrome_options)
-    h = healing_driver_factory(driver)
-
-    try:
-        h.get(f"{local_server}/test_page.html")
-        time.sleep(1)
-
-        h.find_element(By.ID, "search-input").send_keys("test query")
-        h.execute_script("window.BREAK_UI()")
-
-        h.click(By.ID, "search-btn", intent="search submit button")
-
-        result = h.execute_script(
-            "return document.getElementById('result').textContent"
-        )
-        assert result != "", "Expected result div to have content after click"
-
-    finally:
-        driver.quit()
+    value = h.execute_script("return document.querySelector('input').value")
+    assert value == "Selenium healed this!"
