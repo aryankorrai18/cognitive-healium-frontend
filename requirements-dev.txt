@@ -1,0 +1,8 @@
+# Install the Healium SDK from the backend repo (includes the pytest plugin)
+cognitive-healium @ git+https://github.com/aryankorrai18/cognitive-healium-backend.git
+
+# Test runners and browser drivers
+pytest
+pytest-playwright
+selenium
+webdriver-manager
