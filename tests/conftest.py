@@ -1,14 +1,33 @@
 """
-conftest.py — Makes self-healing invisible.
+conftest.py -- Makes self-healing invisible.
 
-When you run:  pytest --healium-enabled
-  → page.fill() and page.click() auto-heal broken locators
-
-When you run:  pytest
-  → page is a normal Playwright page (no healing)
+pytest --healium-enabled   -> page.fill() and page.click() auto-heal
+pytest                     -> page is a normal Playwright page
 """
 
+import time
+import threading
+import http.server
+import functools
 import pytest
+from pathlib import Path
+
+FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
+
+
+@pytest.fixture(scope="session")
+def local_server():
+    """Serve frontend/ on localhost so local tests don't need the internet."""
+    handler = functools.partial(
+        http.server.SimpleHTTPRequestHandler,
+        directory=str(FRONTEND_DIR)
+    )
+    server = http.server.HTTPServer(("127.0.0.1", 9876), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    time.sleep(0.5)
+    yield "http://127.0.0.1:9876"
+    server.shutdown()
 
 
 @pytest.fixture
@@ -31,3 +50,21 @@ def page(context, _healium_enabled, healium_memory, healium_providers):
         yield hp
 
     raw_page.close()
+
+
+@pytest.fixture
+def h(healing_driver_factory):
+    """Self-healing Selenium driver."""
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+
+    opts = Options()
+    opts.add_argument("--headless=new")
+    opts.add_argument("--no-sandbox")
+    opts.add_argument("--disable-dev-shm-usage")
+    opts.add_argument("--disable-gpu")
+
+    driver = webdriver.Chrome(options=opts)
+    healing = healing_driver_factory(driver)
+    yield healing
+    driver.quit()
