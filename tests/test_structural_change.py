@@ -1,32 +1,38 @@
 """
 Scenario 3: Structural Change
-
-Element is wrapped in new containers by the developer.
-The element itself hasn't changed, but its position in the DOM is different.
-Healium finds it by its stable attributes regardless of DOM depth.
+Using brittle structural XPaths that break when the DOM structure changes.
 """
 
+import os
 from tests.conftest import print_healing_summary
 
+DEPLOYED_URL = os.getenv(
+    "DEPLOYED_URL",
+    "https://aryankorrai18.github.io/cognitive-healium-frontend/"
+)
 
-def test_username_input_wrapped_playwright(page, local_server):
-    """Username input is now inside .form-wrapper > .input-container."""
-    page.goto(f"{local_server}/index.html")
 
-    # QA test uses a simple selector — element is nested deeper now
-    page.fill("#username", "john_doe", intent="username input field")
+def test_username_input_wrapped_playwright(page):
+    """Username input is now inside .form-wrapper > .input-container. 
+       Brittle XPath //div[@class='card']/input will FAIL because it's no longer a direct child."""
+    page.goto(DEPLOYED_URL)
+
+    # This XPath expects the input to be a DIRECT child of div.card. 
+    # Because of the new wrappers, this is structurally broken!
+    page.fill("//div[@class='card'][2]/input", "john_doe", intent="username input field")
 
     value = page.locator("#username").input_value()
     assert value == "john_doe"
     print_healing_summary(page, "test_username_input_wrapped_playwright")
 
 
-def test_login_button_playwright(page, local_server):
-    """Login button — same ID, but now inside a nested card structure."""
-    page.goto(f"{local_server}/index.html")
+def test_login_button_playwright(page):
+    """Login button — testing structural XPath for the button as well."""
+    page.goto(DEPLOYED_URL)
 
-    page.fill("#username", "john_doe", intent="username input field")
-    page.click("#login-btn", intent="login submit button")
+    # Same brittle structural XPath assumption
+    page.fill("//div[@class='card'][2]/input", "john_doe", intent="username input field")
+    page.click("//div[@class='card'][2]/button", intent="login submit button")
 
     status = page.locator("#login-status").inner_text()
     assert "john_doe" in status or "Welcome" in status

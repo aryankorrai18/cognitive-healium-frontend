@@ -1,29 +1,29 @@
 """
 Scenario 5: Cross-Framework Memory
-
-A healing learned by Playwright is instantly available to Selenium
-because they share the same ChromaDB collection.
-
-Run this after test_locator_change to see the RAG memory in action.
+A healing learned by Playwright is instantly available to Selenium.
 """
 
+import os
 import time
 from selenium.webdriver.common.by import By
 from tests.conftest import print_healing_summary
 
-DEPLOYED_URL = "https://aryankorrai18.github.io/cognitive-healium/"
+DEPLOYED_URL = os.getenv(
+    "DEPLOYED_URL",
+    "https://aryankorrai18.github.io/cognitive-healium-frontend/"
+)
 
 
-def test_selenium_uses_playwright_memory(h, local_server):
+def test_selenium_uses_playwright_memory(h):
     """
-    If Playwright already healed #search-input → getByRole('searchbox'),
-    Selenium should heal the SAME locator instantly via RAG (no LLM call needed).
+    If Playwright already healed the XPath //input[@id='search-input'],
+    Selenium should heal the SAME broken XPath instantly via RAG memory.
     """
-    h.get(f"{local_server}/index.html")
+    h.get(DEPLOYED_URL)
     time.sleep(1)
 
-    # Same broken locator that Playwright already healed
-    h.fill(By.ID, "search-input", "Cross-framework healing!", intent="product search input field")
+    # Selenium uses By.XPATH to hit the same broken locator
+    h.fill(By.XPATH, "//input[@id='search-input']", "Cross-framework healing!", intent="product search input field")
 
     value = h.execute_script("return document.querySelector('input').value")
     assert value == "Cross-framework healing!"

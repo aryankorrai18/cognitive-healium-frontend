@@ -1,29 +1,34 @@
 """
 Scenario 4: Dynamic Locators
-
 IDs contain random suffixes like order-row-84729.
-Healium avoids the random part and uses stable attributes or text content.
+Using XPath that looks for exact ID match, which fails on dynamic suffixes.
 """
 
+import os
 import time
 from selenium.webdriver.common.by import By
 from tests.conftest import print_healing_summary
 
+DEPLOYED_URL = os.getenv(
+    "DEPLOYED_URL",
+    "https://aryankorrai18.github.io/cognitive-healium-frontend/"
+)
 
-def test_dynamic_order_row_playwright(page, local_server):
+
+def test_dynamic_order_row_playwright(page):
     """Order rows have IDs like #order-row-84729 with random suffixes."""
-    page.goto(f"{local_server}/index.html")
+    page.goto(DEPLOYED_URL)
 
-    # QA test uses a partial ID that doesn't match the dynamic pattern
-    page.click("#order-row", intent="first order row in orders table")
+    # XPath expects exact ID 'order-row', but it has a random suffix in the DOM
+    page.click("//tr[@id='order-row']", intent="first order row in orders table")
     print_healing_summary(page, "test_dynamic_order_row_playwright")
 
 
-def test_dynamic_order_row_selenium(h, local_server):
-    """Selenium — same dynamic ID challenge, proves cross-framework healing."""
-    h.get(f"{local_server}/index.html")
+def test_dynamic_order_row_selenium(h):
+    """Selenium — same dynamic ID challenge using XPath, proves cross-framework healing."""
+    h.get(DEPLOYED_URL)
     time.sleep(1)
 
-    # Click instead of fill — table rows aren't input elements
-    h.click(By.ID, "order-row", intent="first order row in orders table")
+    # Using By.XPATH instead of By.ID
+    h.click(By.XPATH, "//tr[@id='order-row']", intent="first order row in orders table")
     print_healing_summary(h, "test_dynamic_order_row_selenium")

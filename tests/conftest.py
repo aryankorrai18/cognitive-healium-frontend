@@ -6,30 +6,7 @@ Makes self-healing invisible:
   pytest                   → page is a normal Playwright page
 """
 
-import time
-import threading
-import http.server
-import functools
 import pytest
-from pathlib import Path
-
-FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
-
-
-@pytest.fixture(scope="session")
-def local_server():
-    """Serve frontend/ on localhost so local tests don't need the internet."""
-    handler = functools.partial(
-        http.server.SimpleHTTPRequestHandler,
-        directory=str(FRONTEND_DIR)
-    )
-    server = http.server.HTTPServer(("127.0.0.1", 9876), handler)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    time.sleep(0.5)
-    yield "http://127.0.0.1:9876"
-    server.shutdown()
-
 
 @pytest.fixture
 def page(context, _healium_enabled, healium_memory, healium_providers):

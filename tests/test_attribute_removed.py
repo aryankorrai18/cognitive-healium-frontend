@@ -10,7 +10,7 @@ from tests.conftest import print_healing_summary
 
 DEPLOYED_URL = os.getenv(
     "DEPLOYED_URL",
-    "https://aryankorrai18.github.io/cognitive-healium/"
+    "https://aryankorrai18.github.io/cognitive-healium-frontend/"
 )
 
 
