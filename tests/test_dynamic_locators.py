@@ -24,6 +24,6 @@ def test_dynamic_order_row_selenium(h, local_server):
     h.get(f"{local_server}/index.html")
     time.sleep(1)
 
-    # QA uses partial ID — agent finds by stable attributes or XPath contains()
-    h.fill(By.ID, "order-row", "test", intent="order row element")
+    # Click instead of fill — table rows aren't input elements
+    h.click(By.ID, "order-row", intent="first order row in orders table")
     print_healing_summary(h, "test_dynamic_order_row_selenium")
