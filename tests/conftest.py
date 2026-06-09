@@ -1,8 +1,9 @@
 """
-conftest.py -- Makes self-healing invisible.
+conftest.py — Shared fixtures for all test scripts.
 
-pytest --healium-enabled   -> page.fill() and page.click() auto-heal
-pytest                     -> page is a normal Playwright page
+Makes self-healing invisible:
+  pytest --healium-enabled  → page.fill() auto-heals broken locators
+  pytest                   → page is a normal Playwright page
 """
 
 import time
@@ -32,6 +33,7 @@ def local_server():
 
 @pytest.fixture
 def page(context, _healium_enabled, healium_memory, healium_providers):
+    """Override pytest-playwright's page fixture with SelfHealingPage."""
     raw_page = context.new_page()
 
     if not _healium_enabled or healium_memory is None:
@@ -54,7 +56,7 @@ def page(context, _healium_enabled, healium_memory, healium_providers):
 
 @pytest.fixture
 def h(healing_driver_factory):
-    """Self-healing Selenium driver."""
+    """Self-healing Selenium driver — ready to use."""
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
 
@@ -68,3 +70,21 @@ def h(healing_driver_factory):
     healing = healing_driver_factory(driver)
     yield healing
     driver.quit()
+
+
+def print_healing_summary(page_or_driver, test_name: str):
+    """Print a clear summary of what the agent healed — visible in CI logs."""
+    healed = hasattr(page_or_driver, 'healing_events') and len(page_or_driver.healing_events) > 0
+    if healed:
+        for event in page_or_driver.healing_events:
+            print(f"\n{'='*60}")
+            print(f"  SELF-HEALING ACTIVATED in {test_name}")
+            print(f"  Broken locator : {event.original_locator}")
+            print(f"  Healed to       : {event.healed_locator}")
+            print(f"  Confidence      : {event.confidence:.0%}")
+            print(f"  Source          : {event.source}")
+            print(f"  AI Reasoning    : {event.reasoning}")
+            print(f"{'='*60}\n")
+    else:
+        print(f"\n  [{test_name}] Element found normally (no healing needed)\n")
+    return healed

@@ -35,10 +35,10 @@ jobs:
           pip install pytest pytest-playwright
           playwright install chromium --with-deps
 
-      - name: Run Production Test
+      - name: Run All Healing Tests
         env:
           GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
           DEPLOYED_URL: https://aryankorrai18.github.io/cognitive-healium/
         run: |
-          pytest tests/test_healium.py::test_playwright_production -v --tb=short --healium-enabled
+          pytest tests/ -v --tb=short --healium-enabled -s
         continue-on-error: true
