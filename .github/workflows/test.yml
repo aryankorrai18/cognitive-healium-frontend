@@ -1,6 +1,8 @@
 name: Cognitive Healium CI
 
 on:
+  push:
+    branches: [main] # fires on every push to main, regardless of which files changed
   workflow_run:
     workflows: ["Deploy Frontend to GitHub Pages"]
     types:
@@ -17,7 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       github.event.workflow_run.conclusion == 'success' ||
-      github.event_name == 'workflow_dispatch'
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push'
 
     steps:
       - name: Checkout frontend repo
