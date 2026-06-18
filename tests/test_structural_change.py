@@ -21,7 +21,11 @@ def test_username_input_wrapped_playwright(page):
     # Because of the new wrappers, this is structurally broken!
     page.fill("//div[@class='card'][2]/input", "john_doe", intent="username input field")
 
-    value = page.locator("#username").input_value()
+    # FIXED: Use evaluate() to read the value without triggering Playwright's strict locator timeout
+    value = page.evaluate("""() => {
+        const el = document.querySelector('#username');
+        return el ? el.value : '';
+    }""")
     assert value == "john_doe"
     print_healing_summary(page, "test_username_input_wrapped_playwright")
 
@@ -34,6 +38,10 @@ def test_login_button_playwright(page):
     page.fill("//div[@class='card'][2]/input", "john_doe", intent="username input field")
     page.click("//div[@class='card'][2]/button", intent="login submit button")
 
-    status = page.locator("#login-status").inner_text()
+    # FIXED: Use evaluate() to read status text without locator timeout
+    status = page.evaluate("""() => {
+        const el = document.querySelector('#login-status');
+        return el ? el.innerText : '';
+    }""")
     assert "john_doe" in status or "Welcome" in status
     print_healing_summary(page, "test_login_button_playwright")
