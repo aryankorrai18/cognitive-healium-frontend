@@ -22,9 +22,6 @@ def test_dynamic_order_row_playwright(page):
 
     page.click("//tr[@id='order-row']", intent="first order row in orders table")
 
-    # FIX: page.evaluate() takes a JS *expression*, not a statement.
-    # "return window.rowClicked" is a SyntaxError (illegal return statement).
-    # Use an arrow function or drop the return keyword entirely.
     clicked = page.evaluate("() => window.rowClicked || ''")
     assert clicked == "ORD-2024-001", f"Healed to wrong element. Got: {clicked}"
 
@@ -36,16 +33,17 @@ def test_dynamic_order_row_selenium(h):
     h.get(DEPLOYED_URL)
     time.sleep(1)
 
-    # FIX: The healer was suggesting //table/tr[1] which skips <tbody> in HTML.
-    # A more specific intent tells the LLM to generate //tbody/tr[1] as a candidate,
-    # which correctly navigates past the implicit <tbody> element.
-    h.click(
+    # Use find_element so the healer resolves the broken locator to the real element,
+    # then fire the click via JS to guarantee the onclick attribute executes.
+    # Selenium's WebDriver .click() on a <tr> doesn't reliably trigger JS onclick
+    # handlers — JS dispatch does.
+    element = h.find_element(
         By.XPATH,
         "//tr[@id='order-row']",
         intent="first data row inside the orders table tbody"
     )
+    h.execute_script("arguments[0].click();", element)
 
-    # FIX: Same expression-vs-statement fix as the Playwright version above.
     clicked = h.execute_script("return window.rowClicked || ''")
     assert clicked == "ORD-2024-001", f"Healed to wrong element. Got: {clicked}"
 
