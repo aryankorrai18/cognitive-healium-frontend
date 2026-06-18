@@ -21,7 +21,9 @@ def test_search_input_renamed_playwright(page):
     page.goto(DEPLOYED_URL)
     page.fill("#search-input", "Healium healed production!", intent="product search input field")
 
-    value = page.locator("input").input_value()
+    # FIX: page.locator("input") matches all 3 inputs on the page — strict mode violation.
+    # Read back from the specific healed element using its stable placeholder.
+    value = page.get_by_placeholder("Search products...").input_value()
     assert value == "Healium healed production!", f"Unexpected value: {value}"
     print_healing_summary(page, "test_search_input_renamed_playwright")
 
