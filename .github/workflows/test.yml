@@ -41,7 +41,7 @@ jobs:
       - name: Run All Healing Tests
         env:
           GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
-          DEPLOYED_URL: https://aryankorrai18.github.io/cognitive-healium/
+          DEPLOYED_URL: https://aryankorrai18.github.io/cognitive-healium-frontend/
         run: |
           pytest tests/ -v --tb=short --healium-enabled -s
         continue-on-error: true
