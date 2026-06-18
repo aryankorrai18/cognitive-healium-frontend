@@ -2,7 +2,7 @@ name: Cognitive Healium CI
 
 on:
   push:
-    branches: [main] # fires on every push to main, regardless of which files changed
+    branches: [main]
   workflow_run:
     workflows: ["Deploy Frontend to GitHub Pages"]
     types:
@@ -31,6 +31,28 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      # ============================================================
+      # 🚀 NEW STEP 1: Cache Pip packages (LangChain, ChromaDB, etc.)
+      # ============================================================
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # ============================================================
+      # 🚀 NEW STEP 2: Cache Playwright Chromium browser (~150MB)
+      # ============================================================
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
       - name: Install Cognitive Healium SDK and test dependencies
         run: |
           pip install --upgrade pip
@@ -38,23 +60,15 @@ jobs:
           pip install pytest pytest-playwright
           playwright install chromium --with-deps
 
-      # ===============================================================
-      # 🟢 CHANGE 1: Added --log-cli-level=INFO to print HEALED logs
-      # 🟢 CHANGE 2: Added tee to save logs to test_output.log
-      # ===============================================================
       - name: Run All Healing Tests (Capture AI Healing Logs)
         env:
           GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
           DEPLOYED_URL: https://aryankorrai18.github.io/cognitive-healium-frontend/
         run: |
           pytest tests/ -v --tb=short --healium-enabled -s --log-cli-level=INFO 2>&1 | tee test_output.log
-        # 👆 'tee' writes to the file AND shows it in real-time in the CI console
 
-      # ===============================================================
-      # 🟢 CHANGE 3: Upload the log file as an artifact (even if tests fail)
-      # ===============================================================
       - name: 📤 Upload Healing Audit Logs
-        if: always() # Upload even if a test fails, so you can see what healed
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: healium-ci-audit-logs
