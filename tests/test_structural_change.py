@@ -4,12 +4,14 @@ Using brittle structural XPaths that break when the DOM structure changes.
 """
 
 import os
+import time
 from tests.conftest import print_healing_summary
 
+# Added cache-buster ?v=timestamp to bypass GitHub Pages CDN caching
 DEPLOYED_URL = os.getenv(
     "DEPLOYED_URL",
     "https://aryankorrai18.github.io/cognitive-healium-frontend/"
-)
+) + f"?v={int(time.time())}"
 
 
 def test_username_input_wrapped_playwright(page):
@@ -17,11 +19,9 @@ def test_username_input_wrapped_playwright(page):
        Brittle XPath //div[@class='card']/input will FAIL because it's no longer a direct child."""
     page.goto(DEPLOYED_URL)
 
-    # This XPath expects the input to be a DIRECT child of div.card. 
-    # Because of the new wrappers, this is structurally broken!
-    page.fill("//div[@class='card'][2]/input", "john_doe", intent="username input field")
+    # FIXED: Changed card[2] to card[3] to target the Login card (3rd card on page)
+    page.fill("//div[@class='card'][3]/input", "john_doe", intent="username input field")
 
-    # FIXED: Use evaluate() to read the value without triggering Playwright's strict locator timeout
     value = page.evaluate("""() => {
         const el = document.querySelector('#username');
         return el ? el.value : '';
@@ -34,11 +34,10 @@ def test_login_button_playwright(page):
     """Login button — testing structural XPath for the button as well."""
     page.goto(DEPLOYED_URL)
 
-    # Same brittle structural XPath assumption
-    page.fill("//div[@class='card'][2]/input", "john_doe", intent="username input field")
-    page.click("//div[@class='card'][2]/button", intent="login submit button")
+    # FIXED: Changed card[2] to card[3]
+    page.fill("//div[@class='card'][3]/input", "john_doe", intent="username input field")
+    page.click("//div[@class='card'][3]/button", intent="login submit button")
 
-    # FIXED: Use evaluate() to read status text without locator timeout
     status = page.evaluate("""() => {
         const el = document.querySelector('#login-status');
         return el ? el.innerText : '';

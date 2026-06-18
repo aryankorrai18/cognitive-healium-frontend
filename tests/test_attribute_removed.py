@@ -6,12 +6,14 @@ QA test uses the old name. Healium finds the element by role, name, or other att
 """
 
 import os
+import time
 from tests.conftest import print_healing_summary
 
+# Added cache-buster
 DEPLOYED_URL = os.getenv(
     "DEPLOYED_URL",
     "https://aryankorrai18.github.io/cognitive-healium-frontend/"
-)
+) + f"?v={int(time.time())}"
 
 
 def test_search_input_renamed_playwright(page):
@@ -44,21 +46,9 @@ def test_nav_links_renamed_playwright(page):
     """Nav links have dynamic IDs like #nav-home-v2 instead of #nav-home."""
     page.goto(DEPLOYED_URL)
 
-    # QA expects #nav-home but dev changed it to #nav-home-v2
     page.click("#nav-home", intent="navigation home link")
     
-    # FIXED: Verify correct element was clicked to prevent false positive healing
-    clicked_text = page.evaluate("""() => {
-        const link = document.querySelector('[data-testid="nav-home"]') || 
-                     document.querySelector('.nav-link');
-        return link ? link.innerText : '';
-    }""")
-    assert "Home" in clicked_text, f"Healed to wrong element: {clicked_text}"
+    # FIXED: Verify URL changed to #home, proving the link was clicked
+    assert "#home" in page.url, "Home link was not clicked"
     
-    print_healing_summary(page, "test_nav_links_renamed_playwright")
-    """Nav links have dynamic IDs like #nav-home-v2 instead of #nav-home."""
-    page.goto(DEPLOYED_URL)
-
-    # QA expects #nav-home but dev changed it to #nav-home-v2
-    page.click("#nav-home", intent="navigation home link")
     print_healing_summary(page, "test_nav_links_renamed_playwright")

@@ -8,10 +8,11 @@ import time
 from selenium.webdriver.common.by import By
 from tests.conftest import print_healing_summary
 
+# Added cache-buster
 DEPLOYED_URL = os.getenv(
     "DEPLOYED_URL",
     "https://aryankorrai18.github.io/cognitive-healium-frontend/"
-)
+) + f"?v={int(time.time())}"
 
 
 def test_selenium_uses_playwright_memory(h):
