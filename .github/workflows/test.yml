@@ -38,10 +38,24 @@ jobs:
           pip install pytest pytest-playwright
           playwright install chromium --with-deps
 
-      - name: Run All Healing Tests
+      # ===============================================================
+      # 🟢 CHANGE 1: Added --log-cli-level=INFO to print HEALED logs
+      # 🟢 CHANGE 2: Added tee to save logs to test_output.log
+      # ===============================================================
+      - name: Run All Healing Tests (Capture AI Healing Logs)
         env:
           GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
           DEPLOYED_URL: https://aryankorrai18.github.io/cognitive-healium-frontend/
         run: |
-          pytest tests/ -v --tb=short --healium-enabled -s
-        continue-on-error: true
+          pytest tests/ -v --tb=short --healium-enabled -s --log-cli-level=INFO 2>&1 | tee test_output.log
+        # 👆 'tee' writes to the file AND shows it in real-time in the CI console
+
+      # ===============================================================
+      # 🟢 CHANGE 3: Upload the log file as an artifact (even if tests fail)
+      # ===============================================================
+      - name: 📤 Upload Healing Audit Logs
+        if: always() # Upload even if a test fails, so you can see what healed
+        uses: actions/upload-artifact@v4
+        with:
+          name: healium-ci-audit-logs
+          path: test_output.log
