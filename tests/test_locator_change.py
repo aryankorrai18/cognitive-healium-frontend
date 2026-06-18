@@ -17,7 +17,7 @@ DEPLOYED_URL = os.getenv(
 def test_search_input_renamed_playwright(page):
     """QA expects XPath //input[@id='search-input']. Dev changed the ID to search-bar-v3."""
     page.goto(DEPLOYED_URL)
-    
+
     # Using an XPath that relies on the old ID
     page.fill("//input[@id='search-input']", "Healium healed production!", intent="product search input field")
 
@@ -29,13 +29,13 @@ def test_search_input_renamed_playwright(page):
 def test_search_button_works(page):
     """Verify the search button works after healing the input."""
     page.goto(DEPLOYED_URL)
-    
+
     # Heal the input first using XPath
     page.fill("//input[@id='search-input']", "test query", intent="product search input field")
-    
-    # Click the button using XPath (This one isn't broken, but shows mixed usage)
+
+    # Click the button using XPath (this one isn't broken, but shows mixed usage)
     page.click("//button[@id='search-btn']", intent="search submit button")
-    
+
     result = page.locator("#result").inner_text()
     assert result != "", f"Result div is empty"
     print_healing_summary(page, "test_search_button_works")
@@ -47,8 +47,10 @@ def test_nav_links_renamed_playwright(page):
 
     # Using XPath targeting the old ID
     page.click("//a[@id='nav-home']", intent="navigation home link")
-    
-    # FIXED: Verify URL changed to #home, proving the link was clicked
-    assert "#home" in page.url, "Home link was not clicked"
-    
+
+    # FIX: page.url won't reliably contain the hash fragment on GitHub Pages
+    # when a cache-buster query string is present. Read the hash via JS instead.
+    hash_val = page.evaluate("() => window.location.hash")
+    assert hash_val == "#home", f"Home link was not clicked, hash was: {hash_val!r}"
+
     print_healing_summary(page, "test_nav_links_renamed_playwright")

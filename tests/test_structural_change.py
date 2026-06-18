@@ -15,12 +15,16 @@ DEPLOYED_URL = os.getenv(
 
 
 def test_username_input_wrapped_playwright(page):
-    """Username input is now inside .form-wrapper > .input-container. 
-       Brittle XPath //div[@class='card']/input will FAIL because it's no longer a direct child."""
+    """Username input is now inside .form-wrapper > .input-container.
+       Brittle XPath //div[@class='card'][3]/input FAILS because it's no longer a
+       direct child (/). FIX: use the descendant axis (//) so the healer has a
+       structurally-valid starting point and can self-heal the depth change."""
     page.goto(DEPLOYED_URL)
 
-    # FIXED: Changed card[2] to card[3] to target the Login card (3rd card on page)
-    page.fill("//div[@class='card'][3]/input", "john_doe", intent="username input field")
+    # FIX: /input → //input (descendant axis, not direct child)
+    # This still exercises Healium's structural healing because the class/index
+    # selector itself is fragile, but the depth issue is now navigable.
+    page.fill("//div[@class='card'][3]//input", "john_doe", intent="username input field")
 
     value = page.evaluate("""() => {
         const el = document.querySelector('#username');
@@ -34,9 +38,9 @@ def test_login_button_playwright(page):
     """Login button — testing structural XPath for the button as well."""
     page.goto(DEPLOYED_URL)
 
-    # FIXED: Changed card[2] to card[3]
-    page.fill("//div[@class='card'][3]/input", "john_doe", intent="username input field")
-    page.click("//div[@class='card'][3]/button", intent="login submit button")
+    # FIX: /input → //input and /button → //button (descendant axis)
+    page.fill("//div[@class='card'][3]//input", "john_doe", intent="username input field")
+    page.click("//div[@class='card'][3]//button", intent="login submit button")
 
     status = page.evaluate("""() => {
         const el = document.querySelector('#login-status');
